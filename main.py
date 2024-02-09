@@ -1,4 +1,3 @@
-from itertools import permutations, combinations
 from input import input_string
 
 
@@ -12,36 +11,36 @@ def parse_input(string):
     return reports
 
 
-def fill_chars(string, chars):
-    return string.replace('?', '{}').format(*chars)
+cache = {}
 
 
-def check_pattern(string, pattern):
-    counts = [len(group) for group in string.split('.') if '#' in group]
-    return counts == pattern
+def get_variation_sum(line, pattern):
+    if line == '':
+        return 1 if pattern == () else 0
+    if not pattern:
+        return 0 if '#' in line else 1
 
+    key = (line, pattern)
+    if key in cache:
+        return cache[key]
 
-def get_variations_count(data):
-    secret_slots = data[0].count('?')
-    required_hashes = sum(data[1]) - data[0].count('#')
-    pattern = required_hashes * '#' + (secret_slots - required_hashes) * '.'
-    permutations_set = set(permutations(pattern))
+    combinations = 0
 
-    counter = 0
-    for perm in permutations_set:
-        if check_pattern(fill_chars(data[0], perm), data[1]):
-            counter += 1
+    if line[0] in '.?':
+        combinations += get_variation_sum(line[1:], pattern)
 
-    return counter
+    if line[0] in '#?':
+        if len(line) >= pattern[0] and '.' not in line[:pattern[0]] and (
+                len(line) == pattern[0] or line[pattern[0]] != '#'):
+            combinations += get_variation_sum(line[pattern[0] + 1:], pattern[1:])
 
-
-def get_variation_sum(input_string):
-    variation_sums = 0
-    for i, data in enumerate(parse_input(input_string)):
-        variation_sums += get_variations_count(data)
-        print(f"Data set {i}: Variations count is {get_variations_count(data)}")
-    print(f"Total variations sum: {variation_sums}")
+    cache[key] = combinations
+    return combinations
 
 
 if __name__ == '__main__':
-    get_variation_sum(input_string)
+    comb_sum = 0
+    for l, p in parse_input(input_string):
+        comb_sum += get_variation_sum('?'.join([l] * 5), tuple(p) * 5)
+
+    print(comb_sum)
